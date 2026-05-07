@@ -3,7 +3,6 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { supabase } from "../../utils/supabase";
 
-// Get the ID from URL
 const router = useRouter();
 const route = useRoute();
 const id = route.params.id;
@@ -12,6 +11,7 @@ const name = ref("");
 const studentId = ref("");
 const program = ref("");
 const year = ref("");
+const message = ref("");
 
 async function getStudent() {
   const { data: student, error } = await supabase
@@ -22,6 +22,7 @@ async function getStudent() {
 
   if (error) {
     console.log(error);
+    message.value = "Failed to load student data.";
     return;
   }
 
@@ -32,6 +33,11 @@ async function getStudent() {
 }
 
 async function updateStudent() {
+  if (!name.value || !studentId.value || !program.value || !year.value) {
+    message.value = "Please complete all fields.";
+    return;
+  }
+
   const { error } = await supabase
     .from("students")
     .update({
@@ -44,10 +50,10 @@ async function updateStudent() {
     .select();
 
   if (!error) {
-    console.log("Student updated successfully");
     router.push("/");
   } else {
     console.log(error);
+    message.value = "Failed to update student.";
   }
 }
 
@@ -57,125 +63,281 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="page">
-    <button class="back" @click="router.push('/')">← Back</button>
+  <main class="page">
+    <button class="back-btn" @click="router.push('/')">← Back to records</button>
 
-    <h1 class="title">Edit Student</h1>
+    <section class="hero">
+      <p class="eyebrow">Student Record</p>
+      <h1>Edit Student</h1>
+      <p class="subtitle">
+        Update the selected student information and save the changes to Supabase.
+      </p>
+    </section>
 
-    <div class="form">
-      <label>Student Name</label>
-      <input v-model="name" class="field" placeholder="Student Name" />
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <p class="section-label">Update details</p>
+          <h2>Student Information</h2>
+        </div>
+      </div>
 
-      <label>Student ID</label>
-      <input v-model="studentId" class="field" placeholder="Student ID" />
+      <div class="form-grid">
+        <div class="input-group">
+          <label>Student Name</label>
+          <input v-model="name" type="text" placeholder="Enter full name" />
+        </div>
 
-      <label>Program</label>
-      <input v-model="program" class="field" placeholder="Program" />
+        <div class="input-group">
+          <label>Student ID</label>
+          <input v-model="studentId" type="text" placeholder="Enter student ID" />
+        </div>
 
-      <label>Year</label>
-      <select v-model="year" class="field">
-        <option value="" disabled>Select Year</option>
-        <option value="1st Year">1st Year</option>
-        <option value="2nd Year">2nd Year</option>
-        <option value="3rd Year">3rd Year</option>
-        <option value="4th Year">4th Year</option>
-      </select>
+        <div class="input-group">
+          <label>Program</label>
+          <input v-model="program" type="text" placeholder="Example: BSIT" />
+        </div>
 
-      <button @click="updateStudent" class="btn">Save</button>
-    </div>
-  </div>
+        <div class="input-group">
+          <label>Year Level</label>
+          <select v-model="year">
+            <option value="" disabled>Select year</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <p v-if="message" class="message">{{ message }}</p>
+
+        <div class="actions">
+          <button class="secondary-btn" @click="router.push('/')">
+            Cancel
+          </button>
+
+          <button class="primary-btn" @click="updateStudent">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
 </template>
 
+<style>
+body {
+  margin: 0;
+  background: #f6f3ee;
+}
+</style>
+
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500&family=DM+Mono:wght@300;400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 .page {
   min-height: 100vh;
-  background: #f7f6f3;
-  color: #111;
-  font-family: "DM Mono", monospace;
-  padding: 4rem 2rem;
-  max-width: 560px;
+  max-width: 760px;
   margin: 0 auto;
+  padding: 48px 24px;
+  font-family: "Inter", sans-serif;
+  color: #1f2933;
 }
 
-.back {
-  background: none;
+.back-btn {
+  margin-bottom: 32px;
   border: none;
-  font-family: "DM Mono", monospace;
-  font-size: 0.75rem;
-  color: #999;
+  background: transparent;
+  color: #7c7167;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   padding: 0;
-  margin-bottom: 2rem;
 }
 
-.back:hover {
-  color: #111;
+.back-btn:hover {
+  color: #1f2933;
 }
 
-.title {
-  font-family: "Cormorant", serif;
-  font-size: 2.8rem;
-  font-weight: 400;
-  margin-bottom: 2.5rem;
+.hero {
+  margin-bottom: 28px;
 }
 
-.form {
+.eyebrow,
+.section-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a7f73;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(36px, 6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: #171717;
+}
+
+.subtitle {
+  max-width: 560px;
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #6b6259;
+}
+
+.card {
+  background: #fffdf9;
+  border: 1px solid #e7e0d7;
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 20px 50px rgba(38, 31, 25, 0.06);
+}
+
+.card-header {
+  margin-bottom: 24px;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+  color: #222;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 8px;
 }
 
 label {
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #999;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b6259;
 }
 
-.field {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid #c8c4bb;
-  padding: 0.4rem 0;
-  font-family: "DM Mono", monospace;
-  font-size: 0.8rem;
-  color: #111;
+input,
+select {
+  width: 100%;
+  border: 1px solid #ddd6cd;
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #222;
   outline: none;
-  margin-bottom: 0.75rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.field:focus {
-  border-bottom-color: #111;
+input::placeholder {
+  color: #aaa29a;
 }
 
-select.field {
-  cursor: pointer;
+input:focus,
+select:focus {
+  border-color: #1f2933;
+  box-shadow: 0 0 0 4px rgba(31, 41, 51, 0.08);
 }
 
-.btn {
-  margin-top: 0.5rem;
-  align-self: flex-start;
-  background: #111;
-  color: #f7f6f3;
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid #eee8df;
+}
+
+.message {
+  margin: 0;
+  font-size: 13px;
+  color: #a33a2a;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.primary-btn,
+.secondary-btn {
   border: none;
-  padding: 0.45rem 1.1rem;
-  font-family: "DM Mono", monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
 }
 
-.btn:hover {
-  opacity: 0.75;
+.primary-btn {
+  padding: 12px 18px;
+  background: #1f2933;
+  color: #fffdf9;
+}
+
+.secondary-btn {
+  padding: 12px 18px;
+  background: #f1eee8;
+  color: #1f2933;
+}
+
+.primary-btn:hover,
+.secondary-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+@media (max-width: 620px) {
+  .page {
+    padding: 32px 16px;
+  }
+
+  .card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions {
+    width: 100%;
+    margin-left: 0;
+    flex-direction: column-reverse;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+  }
 }
 </style>
