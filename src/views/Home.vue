@@ -1,7 +1,7 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { supabase } from "../../utils/supabase";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 const router = useRouter();
 
@@ -11,6 +11,22 @@ const program = ref("");
 const year = ref("");
 const students = ref([]);
 const message = ref("");
+const searchQuery = ref("");
+
+const filteredStudents = computed(() => {
+  const search = searchQuery.value.toLowerCase().trim();
+
+  if (!search) return students.value;
+
+  return students.value.filter((student) => {
+    return (
+      student.name?.toLowerCase().includes(search) ||
+      student.student_id?.toLowerCase().includes(search) ||
+      student.program?.toLowerCase().includes(search) ||
+      student.year?.toLowerCase().includes(search)
+    );
+  });
+});
 
 async function getAllStudents() {
   const { data, error } = await supabase
@@ -146,13 +162,31 @@ onMounted(() => {
     </section>
 
     <section class="card">
-      <div class="card-header">
+      <div class="records-top">
         <div>
           <p class="section-label">Records</p>
           <h2>Students</h2>
         </div>
 
-        <span class="count">{{ students.length }} total</span>
+        <span class="count">
+          {{ filteredStudents.length }} / {{ students.length }} shown
+        </span>
+      </div>
+
+      <div class="search-box">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search by name, student ID, program, or year..."
+        />
+
+        <button
+          v-if="searchQuery"
+          class="clear-btn"
+          @click="searchQuery = ''"
+        >
+          Clear
+        </button>
       </div>
 
       <div class="table-wrapper">
@@ -164,12 +198,12 @@ onMounted(() => {
           <span>Actions</span>
         </div>
 
-        <div v-if="students.length === 0" class="empty">
-          No student records yet.
+        <div v-if="filteredStudents.length === 0" class="empty">
+          No matching student records found.
         </div>
 
         <div
-          v-for="student in students"
+          v-for="student in filteredStudents"
           :key="student.id"
           class="table-row"
         >
@@ -244,6 +278,13 @@ h1 {
   color: #171717;
 }
 
+h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+  color: #222;
+}
+
 .subtitle {
   max-width: 560px;
   margin: 14px 0 0;
@@ -281,19 +322,13 @@ h1 {
   box-shadow: 0 20px 50px rgba(38, 31, 25, 0.06);
 }
 
-.card-header {
+.card-header,
+.records-top {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: center;
   margin-bottom: 22px;
-}
-
-.card-header h2 {
-  margin: 0;
-  font-size: 22px;
-  letter-spacing: -0.03em;
-  color: #222;
 }
 
 .count {
@@ -361,9 +396,21 @@ select:focus {
   color: #6b6259;
 }
 
+.search-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.search-box input {
+  flex: 1;
+}
+
 .primary-btn,
 .secondary-btn,
-.danger-btn {
+.danger-btn,
+.clear-btn {
   border: none;
   border-radius: 999px;
   font-family: inherit;
@@ -380,11 +427,13 @@ select:focus {
 }
 
 .secondary-btn,
-.danger-btn {
+.danger-btn,
+.clear-btn {
   padding: 8px 12px;
 }
 
-.secondary-btn {
+.secondary-btn,
+.clear-btn {
   background: #f1eee8;
   color: #1f2933;
 }
@@ -396,7 +445,8 @@ select:focus {
 
 .primary-btn:hover,
 .secondary-btn:hover,
-.danger-btn:hover {
+.danger-btn:hover,
+.clear-btn:hover {
   transform: translateY(-1px);
   opacity: 0.9;
 }
@@ -463,6 +513,11 @@ select:focus {
   .form-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .records-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 560px) {
@@ -479,12 +534,14 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
-  .form-footer {
+  .form-footer,
+  .search-box {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .primary-btn {
+  .primary-btn,
+  .clear-btn {
     width: 100%;
   }
 }
